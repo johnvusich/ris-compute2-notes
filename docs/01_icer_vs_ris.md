@@ -59,7 +59,7 @@ Details: [02_storage.md](02_storage.md).
 | Data transfer | `rsync`, Globus | `rsync`, Globus, SMB mount on Mac |
 | Nextflow cluster config | Often provided by nf-core institutional profile | Write my own (`templates/nextflow.config`) |
 
-## Shell gotcha I hit
+## Checking a directory stored as a variable
 
 Typing a variable alone tries to *run* its value:
 
