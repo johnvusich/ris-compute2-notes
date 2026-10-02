@@ -1,0 +1,8 @@
+# Pipeline parameters for this analysis (passed with: -params-file params.yaml)
+# outdir is set in run_nextflow.sbatch, so it is not needed here.
+# Example for nf-core/rnaseq — edit for the pipeline you are running.
+
+input: "samplesheet.csv"     # relative to the analysis (launch) dir, or an absolute path
+# fasta: "/storage3/fs1/sheila.stewart/Active/john.v/references/<genome>/genome.fa"
+# gtf:   "/storage3/fs1/sheila.stewart/Active/john.v/references/<genome>/genes.gtf"
+# aligner: "star_salmon"
