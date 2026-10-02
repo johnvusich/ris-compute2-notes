@@ -61,7 +61,7 @@ as the launch dir and writes `logs/` relative to it.
 ## Monitoring
 
 ```bash
-squeue -u $USER                       # head job + nf-NFCORE_... child jobs
+squeue --me                       # head job + nf-NFCORE_... child jobs
 tail -f logs/nf-*_<jobid>.log         # Nextflow progress
 tail -100 .nextflow.log               # full detail / stack traces
 ```

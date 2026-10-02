@@ -51,6 +51,7 @@ echo "Outdir   : $OUT_DIR"
 echo "Started  : $(date)"
 
 nextflow run "$PIPELINE" -r "$REVISION" \
+  -ansi-log false \
   -c ~/.config/nextflow/nextflow.config \
   -params-file params.yaml \
   -work-dir "$WORK_DIR" \

@@ -124,7 +124,7 @@ what is **requested**, so right-size resources using the Nextflow execution repo
 ## Monitoring jobs
 
 ```bash
-squeue -u $USER
+squeue --me
 sacct -X -u $USER -S today --format=JobID,JobName%30,State,Elapsed,ExitCode
 seff <jobid>            # efficiency of a finished job (if installed)
 scancel <jobid>

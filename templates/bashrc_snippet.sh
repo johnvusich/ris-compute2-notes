@@ -11,5 +11,5 @@ alias c2='module purge && module load ris slurm/compute2/25.05'
 # Shortcuts
 alias cds='cd $SCRATCH'
 alias cdp='cd $PROJECTS'
-alias sq='squeue -u $USER'
+alias sq='squeue --me'
 alias space='df -h /home/john.v /scratch2/fs1/sheila.stewart /storage3/fs1/sheila.stewart'

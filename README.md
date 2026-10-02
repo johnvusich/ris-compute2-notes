@@ -83,14 +83,14 @@ sinfo -s
 bash ~/ris-compute2-notes/scripts/new_analysis.sh <project> <analysis>   # scaffold
 cd /storage3/fs1/sheila.stewart/Active/john.v/projects/<project>/analyses/<analysis>
 sbatch run_nextflow.sbatch        # ALWAYS submit from the analysis dir
-squeue -u $USER
+squeue --me
 tail -f logs/*.log
 ```
 
 ### Monitor / cancel
 
 ```bash
-squeue -u $USER                     # my jobs
+squeue --me                     # my jobs
 sacct -X -u $USER -S today          # today's jobs incl. finished
 scancel <jobid>                     # cancel one job
 scancel -u $USER                    # cancel all my jobs
