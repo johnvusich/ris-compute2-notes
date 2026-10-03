@@ -23,7 +23,8 @@ export NXF_APPTAINER_CACHEDIR=$STORAGE/apptainer_cache
 export APPTAINER_CACHEDIR=$STORAGE/apptainer_cache
 
 module purge
-module load ris nextflow/25.10.0 apptainer/1.3.6
+module load ris
+module load nextflow/25.10.0 apptainer/1.3.6
 
 cd "$SLURM_SUBMIT_DIR"
 nextflow run "nf-core/$PIPELINE" -r "$REVISION" -profile test \
