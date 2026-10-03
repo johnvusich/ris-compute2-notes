@@ -4,6 +4,15 @@ Errors I've hit on Compute2 and what fixed them. Add new ones at the top.
 
 ---
 
+### Job dies instantly: `Please check the spelling or version number` for nextflow/apptainer
+
+**Cause:** After `module purge`, `module load ris nextflow/... apptainer/...` on one line can't find
+nextflow/apptainer; `ris` has to be loaded first to make the RIS software tree visible.
+**Fix:** Load `ris` on its own line:
+`module load ris` then `module load nextflow/25.10.0 apptainer/1.3.6`.
+
+---
+
 ### `Cannot invoke "nextflow.util.Duration.toMillis()" because "this.pullTimeout" is null`
 
 **When:** First container pull, Nextflow 25.10.0 with my own `apptainer { }` block.
