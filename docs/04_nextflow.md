@@ -104,6 +104,15 @@ nextflow run nf-core/rnaseq -r 3.26.0 -profile test \
   -resume
 ```
 
+## Container engine
+- Engine is selected with `-profile singularity` (or `apptainer`), not in the global config.
+- Use `singularity` for older nf-core pipelines (e.g. cutandrun 3.2.2): their modules
+  check `workflow.containerEngine == 'singularity'` to pull native Singularity images;
+  with `apptainer` they fall back to converting Docker images.
+- Tests: `-profile test,singularity`
+
+---
+
 Modules: `ris nextflow/25.10.0 apptainer/1.3.6`.
 Launch dir: `/storage3/fs1/sheila.stewart/Active/john.v/tests/rnaseq_test_launch`.
 Submitted from `~`, so the Slurm log went to home (see troubleshooting).
