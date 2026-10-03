@@ -13,6 +13,7 @@ Written while learning the system coming from the MSU HPCC (ICER).
 | [docs/04_nextflow.md](docs/04_nextflow.md) | How I run nf-core pipelines on Compute2 (step by step) |
 | [docs/05_project_organization.md](docs/05_project_organization.md) | How to organize projects and analyses |
 | [docs/06_troubleshooting.md](docs/06_troubleshooting.md) | Errors I've hit and how I fixed them |
+| [docs/07_pipeline_tests.md](docs/07_pipeline_tests.md) | Test runs of nf-core pipelines on Compute2 |
 | [templates/](templates/) | `nextflow.config`, sbatch script, `.bashrc` snippet, params file |
 | [scripts/new_analysis.sh](scripts/new_analysis.sh) | Scaffolds a new project/analysis directory |
 
