@@ -38,7 +38,8 @@ export APPTAINER_CACHEDIR="$STORAGE/apptainer_cache"
 
 # ---- Software ----------------------------------------------------------------
 module purge
-module load ris nextflow/25.10.0 apptainer/1.3.6
+module load ris
+module load nextflow/25.10.0 apptainer/1.3.6
 
 # ---- Run ---------------------------------------------------------------------
 cd "$LAUNCH_DIR"
