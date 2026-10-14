@@ -4,6 +4,24 @@ Errors I've hit on Compute2 and what fixed them. Add new ones at the top.
 
 ---
 
+### `Cannot run program "sbatch" ... error=2, No such file or directory`
+
+**When:** Nextflow head job submitting its first task (cutandrun test, jobs 3293017, 3293038).
+**Cause:** `module purge` in the sbatch script also unloads the Slurm module, so `sbatch` isn't on
+PATH inside the head job. (The rnaseq test worked only because its script had no `module purge`
+and inherited Slurm from the login shell.)
+**Fix:** After `module load ris`, also `module load slurm/compute2/25.05`.
+
+---
+
+### `Cannot invoke method optional() on null object` at launch
+
+**When:** Older nf-core pipelines (cutandrun 3.2.2) on Nextflow 25.10.0.
+**Cause:** Module output declared as `emit: html optional true` (no comma); Nextflow 25.10's parser rejects it.
+**Fix:** Run an older Nextflow: `export NXF_VER=24.04.4` before `nextflow run` (Nextflow downloads it itself).
+
+---
+
 ### Job dies instantly: `Please check the spelling or version number` for nextflow/apptainer
 
 **Cause:** After `module purge`, `module load ris nextflow/... apptainer/...` on one line can't find
