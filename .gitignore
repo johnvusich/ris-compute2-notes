@@ -2,3 +2,4 @@
 *.log
 .nextflow*
 work/
+.claude/settings.local.json
