@@ -20,7 +20,7 @@ tail -f logs/*.log
 | Date | Pipeline | Version | Nextflow | Job ID | Tasks | Time | CPU h | Result |
 |---|---|---|---|---|---|---|---|---|
 | 2026-10-02 | rnaseq | 3.26.0 | 25.10.0 | 3284986 | 234 | 27m 9s | 0.5 | Succeeded |
-| TODO | cutandrun | 3.2.2 | 25.10.0 | TODO | TODO | TODO | TODO | TODO |
+| 2026-10-14 | cutandrun | 3.2.2 | 24.04.4 (`NXF_VER`) | 3533290 | 135 | 9m 50s | 0.5 | Succeeded (2 PRESEQ_LCEXTRAP errors ignored) |
 
 ## Attempt log: cutandrun 3.2.2
 
@@ -34,6 +34,7 @@ Test dir: `tests/cutandrun_3.2.2/`. Work dir: `$SCRATCH/nf_work/tests/cutandrun_
 | 4 | 2026-10-03 | 3293014 | (rerun) | Same `optional()` error | Failed (16 s) |
 | 5 | 2026-10-03 | 3293017 | `export NXF_VER=24.04.4` | `Cannot run program "sbatch"` (`module purge` unloads Slurm; head job can't submit tasks) | Failed (33 s) |
 | 6 | 2026-10-03 | 3293038 | `-profile test,apptainer` | Same `sbatch` error | Failed (27 s) |
+| 7 | 2026-10-14 | 3533290 | `module load slurm/compute2/25.05` after `module load ris` (pipeline also re-downloaded, see above) | 2 × `PRESEQ_LCEXTRAP` exit 1, `max count before zero is less than min required count (4)`, ignored by the pipeline (test data too small for preseq) | **Succeeded**: 133 completed, 2 ignored |
 
 Between 6 and 7, `~/.nextflow/assets/nf-core/` was deleted by hand, so attempt 7 re-downloads the pipeline.
 
