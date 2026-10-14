@@ -24,10 +24,14 @@ export APPTAINER_CACHEDIR=$STORAGE/apptainer_cache
 
 module purge
 module load ris
+module load slurm/compute2/25.05   # module purge removes Slurm; head job needs sbatch
 module load nextflow/25.10.0 apptainer/1.3.6
 
+# Older pipelines that fail to parse on Nextflow 25.10 (e.g. cutandrun 3.2.2):
+# export NXF_VER=24.04.4
+
 cd "$SLURM_SUBMIT_DIR"
-nextflow run "nf-core/$PIPELINE" -r "$REVISION" -profile test \
+nextflow run "nf-core/$PIPELINE" -r "$REVISION" -profile test,apptainer \
   -ansi-log false \
   -c ~/.config/nextflow/nextflow.config \
   -work-dir "$SCRATCH/nf_work/tests/${PIPELINE}_${REVISION}" \

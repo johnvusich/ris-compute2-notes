@@ -39,6 +39,7 @@ export APPTAINER_CACHEDIR="$STORAGE/apptainer_cache"
 # ---- Software ----------------------------------------------------------------
 module purge
 module load ris
+module load slurm/compute2/25.05   # module purge removes Slurm; head job needs sbatch
 module load nextflow/25.10.0 apptainer/1.3.6
 
 # ---- Run ---------------------------------------------------------------------
