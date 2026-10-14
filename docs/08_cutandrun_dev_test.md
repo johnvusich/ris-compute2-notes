@@ -1,6 +1,15 @@
 # nf-core/cutandrun `dev` test on Compute2
 
-**Status: IN PROGRESS**
+**Status: DONE.** nf-core/cutandrun `dev` (commit `d59714a50c67486951b480febb726e47a7833187`) passes the
+test profile on Compute2 with the cluster's `nextflow/25.10.0` on the **first attempt** (job 3537574), with no
+changes to the template, config, parameters, or pipeline code.
+
+- 133 tasks: 131 completed, 2 `PRESEQ_LCEXTRAP` errors ignored by the pipeline (test data too small for
+  preseq; same as the 3.2.2 test).
+- 17m 29s wall time; ~1.0 CPU h allocated (head job + 133 task jobs).
+- MultiQC report: `tests/cutandrun_dev/results/04_reporting/multiqc/multiqc_report.html`.
+- Unlike 3.2.2, no `NXF_VER` was needed: `dev` requires Nextflow >= 25.04.0 and parses on 25.10.0 with the
+  default (non-strict) parser.
 
 ## Setup
 
@@ -61,3 +70,4 @@ Attempt limit for this test: 6 failed attempts (from the task instructions; `CLA
 
 | # | Date | Job ID | Change | Error | Result |
 |---|---|---|---|---|---|
+| 1 | 2026-10-14 | 3537574 | None: `templates/run_nf_test.sbatch` as-is, Nextflow 25.10.0, `-profile test,apptainer`, `-r d59714a5…` | 2 × `PRESEQ_LCEXTRAP` exit 1, `max count before zero is less than min required count (4)`, ignored by the pipeline | **Succeeded**: 131 completed, 2 ignored; 17m 29s; ~1.0 CPU h |
