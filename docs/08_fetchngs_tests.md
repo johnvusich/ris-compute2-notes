@@ -149,6 +149,7 @@ for the head job plus all task jobs.
 | 1 | 2026-10-15 | 1.13.0 | ftp | 3543545 | None (template as-is) | `Nextflow version 25.10.0 does not match workflow required version: >=25.10.4` | Failed at launch (19 s, 0.01 CPU h); no tasks. Switch to 1.12.0 |
 | 2 | 2026-10-15 | 1.12.0 | ftp | 3543588 | `-r 1.12.0` | `SRA_FASTQ_FTP` exit 4: `wget: unable to resolve host address 'ftp.sra.ebi.ac.uk'`, after Apptainer `WARNING: Skipping mount .../etc/resolv.conf [files]: /etc/resolv.conf doesn't exist in container` | Failed: metadata steps OK, all 4 downloads failed ×3 tries; 3m 37s, 0.29 CPU h |
 | 3 | 2026-10-15 | 1.12.0 | ftp | 3543676 | `-c fetchngs_1.12.0_wget.config` (SRA_FASTQ_FTP container → 1.13.0's Wave `gzip_wget` image) | — | **Succeeded**: 4/4 FASTQs, md5 OK; 5m 39s, 0.59 CPU h (metadata tasks cached) |
+| 4 | 2026-10-15 | 1.12.0 | sratools | 3543725 | `--download_method sratools` (same config as #3) | — | **Succeeded** first try: 4/4 FASTQs; 7m 54s, 0.75 CPU h |
 
 ### Attempt 2 (ftp, 1.12.0): DNS failure inside the wget container
 
@@ -189,3 +190,31 @@ an optional 4th argument for an extra `-c` config). `-resume` reused the 8 metad
   `metadata/*.runinfo_ftp.tsv`, `samplesheet/{samplesheet.csv,id_mappings.csv,multiqc_config.yml}`, `pipeline_info/`.
 - The work dir also holds a full copy of the FASTQs (`publish_dir_mode = copy`): 495 MB on scratch.
 - `~/.ncbi` unchanged (ftp doesn't use sra-tools).
+
+### Attempt 4 (sratools, 1.12.0): success
+
+Same command as attempt 3 with `sratools` (the wget override is passed but unused). Fresh work dir, no cache.
+
+- Head job 3543725, c2-node-003: **7m 54s**; **0.75 CPU h** (head 0.26; `SRATOOLS_FASTERQDUMP` 0.30, `process_medium` =
+  6 CPU / 36 GB, used ~5 cores for ~20 s; `SRATOOLS_PREFETCH` 0.12; `SRA_IDS_TO_RUNINFO` 0.07).
+- Task realtimes: `SRA_IDS_TO_RUNINFO` ~1 min each (ENA API slow this time vs 3–20 s in attempt 2);
+  `SRATOOLS_PREFETCH` 6–14 s for three runs (~12–25 MB/s from NCBI) and **3m 7s** for SRR23753574;
+  `SRATOOLS_FASTERQDUMP` 17–22 s each.
+- `prefetch` fetched full `.sra` files (147–183 MB; not SRA Lite) and `vdb-validate` reported each "consistent".
+- Outputs (`sratools/results/`): `fastq/*.fastq.gz` (4 files, **946,293,168 bytes**, ~1.8× the ENA files),
+  `custom/user-settings.mkfg`, `metadata/`, `samplesheet/`, `pipeline_info/`. No `fastq/md5/` (only ftp/aspera write
+  md5 files; ENA md5s don't apply to these files).
+- Scratch: work dir **1.6 GB** (`.sra` files + uncompressed FASTQ temp + copies).
+- **sra-tools never touches home.** Nextflow runs every task as
+  `apptainer exec --no-home --pid -B <task workdir> --bind /storage3,/scratch2 ...`, so `$HOME/.ncbi` is not visible
+  in the container. `CUSTOM_SRATOOLSNCBISETTINGS` generated a fresh settings file in its work dir (new GUID +
+  `report_instance_identity`) instead of copying the probe's `~/.ncbi/user-settings.mkfg`, and prefetch/fasterq-dump
+  wrote only to their work dirs. `~/.ncbi` is unchanged (still the 107-byte file from the probe, 15:02).
+- **FASTQ content differs from ENA (see comparison).** First read of SRR23753576:
+
+  ```
+  ENA (ftp):  @SRR23753576.1 1/1                 sratools: @SRR23753576.1 1 length=85
+              CTGAATGATATNGTTTCGG...                         CTGAATGATATNGTTTCGG...   (same sequence)
+              +                                              +SRR23753576.1 1 length=85
+              ??????????????????????...                      AAAAA/6EEA/#EAEEEEAEEEE6EA#E6...
+  ```
