@@ -230,5 +230,20 @@ Same command as attempt 3 with `sratools` (the wget override is passed but unuse
   with the **DSA** bypass key from the aspera-cli 4.14.0 image. 1.13.0's module instead uses an **RSA** bypass key it
   ships in `modules/local/aspera_cli/assets/aspera_bypass_rsa.pem` (and installs `ascp` at runtime via
   `ascli conf ascp install`, since aspera-cli 4.20.0 no longer bundles it).
-- Plan for attempt 6 (last allowed for aspera): keep 1.12.0's image and `ascp`, swap only the key (RSA), after a
-  manual one-file test on a compute node.
+- Planned fix for the 2nd (last allowed) aspera attempt: same image, RSA key. **Tested by hand first and it fails
+  too, so the 2nd attempt was not spent.**
+
+#### Manual diagnosis (srun jobs on compute nodes, one 37 MB test file SRR23753578; not pipeline attempts)
+
+| Test | Result |
+|---|---|
+| aspera-cli 4.14.0 image, `ascp` 4.4.2, DSA key (1.12.0 as-is) | `failed to authenticate` |
+| same, RSA key (image's own `aspera_bypass_rsa.pem`, identical md5 `cd99522f…` to 1.13.0's asset) | `failed to authenticate` |
+| `ascp -DD -L <dir>` debug log | `ERR [asssh] SSH connection startup failed, err = -5` → `SSH connection startup encountered invalid protocol` → `errcode=89 errstr="SSH authentication failed"`, 7 ms after the client sent its KEX list. libssh2 error −5 is a **key-exchange failure**: the session dies before any key is offered, so no key choice can fix it. ENA's Aspera SSH endpoint and the libssh2 inside `ascp` 4.4.2 (Oct 2023) no longer share algorithms |
+| aspera-cli **4.19.0** image (newest that might still bundle a newer `ascp`) | No `ascp` in the image (`executable file not found in $PATH`) and no `/usr/local/etc/aspera/` → no 1.12.0 image ships a newer `ascp` |
+| aspera-cli **4.20.0** image + `ascli conf ascp install` (1.13.0's way of getting a current `ascp` from IBM) | `ERROR: Argument: unprocessed values: ["conf", "ascp", "install"]` (also with `config`); Apptainer also refused my `HOME` override (`Overriding HOME environment variable with APPTAINERENV_HOME is not permitted`). **Inconclusive**: this may be my invocation, not 1.13.0's module; I stopped here |
+
+**Aspera on Compute2: BLOCKED for 1.12.0.** Not a firewall problem (TCP 33001 open, SSH handshake starts); the
+`ascp` 4.4.2 bundled with every image 1.12.0 can use fails key exchange with ENA's server. Whether 1.13.0's runtime
+`ascp` download works here is untested (needs Nextflow ≥ 25.10.4, and outbound access to IBM's download servers).
+Same practical result as on the MSU cluster: don't use aspera.
