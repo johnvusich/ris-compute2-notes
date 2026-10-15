@@ -147,3 +147,29 @@ for the head job plus all task jobs.
 | # | Date | Version | Method | Job ID | Change | Error | Result |
 |---|---|---|---|---|---|---|---|
 | 1 | 2026-10-15 | 1.13.0 | ftp | 3543545 | None (template as-is) | `Nextflow version 25.10.0 does not match workflow required version: >=25.10.4` | Failed at launch (19 s, 0.01 CPU h); no tasks. Switch to 1.12.0 |
+| 2 | 2026-10-15 | 1.12.0 | ftp | 3543588 | `-r 1.12.0` | `SRA_FASTQ_FTP` exit 4: `wget: unable to resolve host address 'ftp.sra.ebi.ac.uk'`, after Apptainer `WARNING: Skipping mount .../etc/resolv.conf [files]: /etc/resolv.conf doesn't exist in container` | Failed: metadata steps OK, all 4 downloads failed ×3 tries; 3m 37s, 0.29 CPU h |
+
+### Attempt 2 (ftp, 1.12.0): DNS failure inside the wget container
+
+- `SRA_IDS_TO_RUNINFO` and `SRA_RUNINFO_TO_FTP` worked (ENA API reachable from tasks; metadata in `results/metadata/`).
+- Every `SRA_FASTQ_FTP` task failed with wget exit 4 (network failure) in < 1 s to 45 s, including both retries
+  from the `error_retry` label (maxRetries 2), then the run stopped.
+- Not a firewall block: the probe reached `ftp.sra.ebi.ac.uk` from a compute node. Cause is the image.
+  In `biocontainers/wget:1.20.1` (busybox-based) `/etc/resolv.conf` is a **dangling symlink**
+  (`/etc/resolv.conf -> ../tmp/resolv.conf`), so Apptainer can't bind the host's resolv.conf over it and the
+  container has no DNS. Checked in job 3543647 (c2-node-007):
+
+  ```
+  -- old image: lrwxrwxrwx ... /etc/resolv.conf -> ../tmp/resolv.conf
+                wget: unable to resolve host address 'ftp.sra.ebi.ac.uk'
+  -- 1.13.0 image (Wave gzip_wget, GNU Wget 1.25.0): /etc/resolv.conf present
+                URL: http://ftp.sra.ebi.ac.uk/vol1/fastq/SRR237/078/SRR23753578/SRR23753578.fastq.gz 200 OK
+  ```
+
+- This is upstream issue nf-core/fetchngs#373, fixed in 1.13.0 by PR #380 ("Use Seqera Wave container for wget
+  to fix DNS resolution issues"). The other 1.12.0 images (python, sra-tools, mulled sra-tools/pigz,
+  aspera-cli) didn't print the resolv.conf warning in the probe.
+- Side note: ENA's `fastq_ftp` links have no scheme, so wget prepends `http://`: the "ftp" method actually
+  downloads over **HTTP** (port 80).
+- Fix for attempt 3 (one change): override the `SRA_FASTQ_FTP` container with the 1.13.0 image, via
+  [`templates/fetchngs_1.12.0_wget.config`](../templates/fetchngs_1.12.0_wget.config).
