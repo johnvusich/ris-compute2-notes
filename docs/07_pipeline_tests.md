@@ -22,6 +22,7 @@ tail -f logs/*.log
 | 2026-10-02 | rnaseq | 3.26.0 | 25.10.0 | 3284986 | 234 | 27m 9s | 0.5 | Succeeded |
 | 2026-10-14 | cutandrun | 3.2.2 | 24.04.4 (`NXF_VER`) | 3533290 | 135 | 9m 50s | 0.5 | Succeeded (2 PRESEQ_LCEXTRAP errors ignored) |
 | 2026-10-14 | cutandrun | dev (`d59714a5`) | 25.10.0 | 3537574 | 133 | 17m 29s | 1.0 | Succeeded (2 PRESEQ_LCEXTRAP errors ignored); see [08_cutandrun_dev_test.md](08_cutandrun_dev_test.md) |
+| 2026-10-15 | fetchngs | 1.13.0 | 25.10.0 | 3543545 | 0 | 19s | 0.01 | Failed at launch: needs Nextflow >= 25.10.4; see [08_fetchngs_tests.md](08_fetchngs_tests.md) |
 
 ## Attempt log: cutandrun 3.2.2
 
