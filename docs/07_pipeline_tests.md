@@ -22,6 +22,8 @@ tail -f logs/*.log
 | 2026-10-02 | rnaseq | 3.26.0 | 25.10.0 | 3284986 | 234 | 27m 9s | 0.5 | Succeeded |
 | 2026-10-14 | cutandrun | 3.2.2 | 24.04.4 (`NXF_VER`) | 3533290 | 135 | 9m 50s | 0.5 | Succeeded (2 PRESEQ_LCEXTRAP errors ignored) |
 | 2026-10-14 | cutandrun | dev (`d59714a5`) | 25.10.0 | 3537574 | 133 | 17m 29s | 1.0 | Succeeded (2 PRESEQ_LCEXTRAP errors ignored); see [08_cutandrun_dev_test.md](08_cutandrun_dev_test.md) |
+| 2026-10-15 | fetchngs | 1.13.0 | 25.10.0 | 3543545 | 0 | 19s | 0.01 | Failed at launch: needs Nextflow >= 25.10.4; see [08_fetchngs_tests.md](08_fetchngs_tests.md) |
+| 2026-10-15 | fetchngs | 1.12.0 | 25.10.0 | 3543676 (ftp), 3543725 (sratools), 3543820 (aspera) | 17 (8 cached) / 22 / 12 | 5m 39s / 7m 54s / 3m 23s | 0.59 / 0.75 / 0.26 | ftp succeeded with wget container override; sratools succeeded as-is (recommended); aspera blocked (ascp SSH key exchange fails); see [08_fetchngs_tests.md](08_fetchngs_tests.md) |
 
 ## Attempt log: cutandrun 3.2.2
 
@@ -43,4 +45,6 @@ Between 6 and 7, `~/.nextflow/assets/nf-core/` was deleted by hand, so attempt 7
 
 - rnaseq 3.27.0 needs Nextflow >= 25.10.4; used 3.26.0.
 - cutandrun 3.2.2 declares Nextflow `!>=23.04.0` but fails to parse on 25.10.0; use `NXF_VER=24.04.4`.
+- fetchngs 1.13.0 needs Nextflow >= 25.10.4; used 1.12.0 (no `NXF_VER`). fetchngs runs one launch dir per download method:
+  `tests/fetchngs_1.12.0/<method>/`, work dir `$SCRATCH/nf_work/tests/fetchngs_1.12.0_<method>`.
 - rnaseq test was launched before this layout; its files are in `tests/rnaseq_test_launch/` and `tests/rnaseq_test/`.
