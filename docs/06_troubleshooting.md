@@ -4,6 +4,24 @@ Errors I've hit on Compute2 and what fixed them. Add new ones at the top.
 
 ---
 
+### `wget: unable to resolve host address 'ftp.sra.ebi.ac.uk'` (exit 4) in fetchngs `SRA_FASTQ_FTP`
+
+**When:** fetchngs 1.12.0, `--download_method ftp`, `-profile apptainer` (job 3543588).
+**Cause:** Not a firewall block. `biocontainers/wget:1.20.1` has a dangling `/etc/resolv.conf` symlink, so Apptainer
+can't bind the host's DNS config (`WARNING: Skipping mount .../etc/resolv.conf ... doesn't exist in container`).
+**Fix:** `-c templates/fetchngs_1.12.0_wget.config` (uses the wget image from fetchngs 1.13.0), or use
+`--download_method sratools`. Details: [08_fetchngs_tests.md](08_fetchngs_tests.md).
+
+---
+
+### `ascp: failed to authenticate, exiting.` (fetchngs aspera)
+
+**Cause:** Misleading message: the SSH key exchange with ENA's Aspera server fails (`ascp -DD -L <dir>` log:
+`SSH connection startup failed, err = -5`). The `ascp` 4.4.2 in the fetchngs 1.12.0 image and the server share no key-exchange algorithms (most likely `ascp` is too old); swapping DSA → RSA key doesn't help.
+**Fix:** None for 1.12.0; use `--download_method sratools`. See [08_fetchngs_tests.md](08_fetchngs_tests.md).
+
+---
+
 ### `Cannot run program "sbatch" ... error=2, No such file or directory`
 
 **When:** Nextflow head job submitting its first task (cutandrun test, jobs 3293017, 3293038).
