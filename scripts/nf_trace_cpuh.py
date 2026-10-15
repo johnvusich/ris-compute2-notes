@@ -5,6 +5,7 @@ usage: nf_trace_cpuh.py <head_jobid> <execution_trace.txt> [...]
 Reads task Slurm job IDs from the trace's native_id column (works when the HTML
 report failed to render, unlike nf_usage.py). Needs Slurm loaded (sacct).
 Prints per-process tasks / allocated CPU h / used CPU h, then the run total.
+CACHED tasks (from -resume) are skipped: their CPU was spent in the earlier run.
 """
 import csv, subprocess, sys
 from collections import defaultdict
@@ -47,7 +48,8 @@ def main(head, traces):
     tasks = []
     for t in traces:
         for r in csv.DictReader(open(t), delimiter='\t'):
-            if r['native_id'] and r['native_id'] != '-':
+            # CACHED rows point at an earlier run's jobs; count them there, not here
+            if r['native_id'] and r['native_id'] != '-' and r['status'] != 'CACHED':
                 tasks.append((r['name'].split(' (')[0].split(':')[-1], r['native_id'], r['status']))
     acct = sacct([head] + [n for _, n, _ in tasks])
     per = defaultdict(lambda: [0, 0, 0.0, 0.0])

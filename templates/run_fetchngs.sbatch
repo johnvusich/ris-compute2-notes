@@ -13,12 +13,14 @@
 #   sbatch -J nf-fetchngs-<method> run_fetchngs.sbatch <version> <method> <ids_file>
 # Example:
 #   cd $STORAGE/tests/fetchngs_1.12.0/ftp
-#   sbatch -J nf-fetchngs-ftp run_fetchngs.sbatch 1.12.0 ftp ../ids.csv
+#   sbatch -J nf-fetchngs-ftp run_fetchngs.sbatch 1.12.0 ftp ../ids.csv fetchngs_1.12.0_wget.config
+# Optional 4th argument: an extra -c config (e.g. container override), loaded after the global config.
 
 set -eo pipefail
 REVISION="$1"
 METHOD="$2"                      # ftp | sratools | aspera (| fastq-dl in >= 1.13.0)
 IDS="$(realpath "$3")"
+EXTRA_CONFIG="${4:+$(realpath "$4")}"
 
 SCRATCH=/scratch2/fs1/sheila.stewart/john.v
 STORAGE=/storage3/fs1/sheila.stewart/Active/john.v
@@ -36,6 +38,7 @@ echo "Host     : $(hostname)"
 echo "Pipeline : nf-core/fetchngs $REVISION, --download_method $METHOD"
 echo "IDs      : $IDS"
 echo "Work     : $WORK_DIR"
+echo "Extra -c : ${EXTRA_CONFIG:-none}"
 echo "Started  : $(date)"
 # sra-tools reads/writes ~/.ncbi by default; record whether a run creates it
 echo "~/.ncbi before: $(ls -d ~/.ncbi 2>/dev/null || echo absent)"
@@ -44,6 +47,7 @@ cd "$SLURM_SUBMIT_DIR"
 nextflow run nf-core/fetchngs -r "$REVISION" -profile apptainer \
   -ansi-log false \
   -c ~/.config/nextflow/nextflow.config \
+  ${EXTRA_CONFIG:+-c "$EXTRA_CONFIG"} \
   -work-dir "$WORK_DIR" \
   --input "$IDS" \
   --download_method "$METHOD" \

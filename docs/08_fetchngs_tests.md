@@ -148,6 +148,7 @@ for the head job plus all task jobs.
 |---|---|---|---|---|---|---|---|
 | 1 | 2026-10-15 | 1.13.0 | ftp | 3543545 | None (template as-is) | `Nextflow version 25.10.0 does not match workflow required version: >=25.10.4` | Failed at launch (19 s, 0.01 CPU h); no tasks. Switch to 1.12.0 |
 | 2 | 2026-10-15 | 1.12.0 | ftp | 3543588 | `-r 1.12.0` | `SRA_FASTQ_FTP` exit 4: `wget: unable to resolve host address 'ftp.sra.ebi.ac.uk'`, after Apptainer `WARNING: Skipping mount .../etc/resolv.conf [files]: /etc/resolv.conf doesn't exist in container` | Failed: metadata steps OK, all 4 downloads failed ×3 tries; 3m 37s, 0.29 CPU h |
+| 3 | 2026-10-15 | 1.12.0 | ftp | 3543676 | `-c fetchngs_1.12.0_wget.config` (SRA_FASTQ_FTP container → 1.13.0's Wave `gzip_wget` image) | — | **Succeeded**: 4/4 FASTQs, md5 OK; 5m 39s, 0.59 CPU h (metadata tasks cached) |
 
 ### Attempt 2 (ftp, 1.12.0): DNS failure inside the wget container
 
@@ -173,3 +174,18 @@ for the head job plus all task jobs.
   downloads over **HTTP** (port 80).
 - Fix for attempt 3 (one change): override the `SRA_FASTQ_FTP` container with the 1.13.0 image, via
   [`templates/fetchngs_1.12.0_wget.config`](../templates/fetchngs_1.12.0_wget.config).
+
+### Attempt 3 (ftp, 1.12.0 + wget container override): success
+
+`sbatch -J nf-fetchngs-ftp run_fetchngs.sbatch 1.12.0 ftp ../ids.csv fetchngs_1.12.0_wget.config` (the sbatch gained
+an optional 4th argument for an extra `-c` config). `-resume` reused the 8 metadata tasks from attempt 2.
+
+- Head job 3543676, c2-node-015: **5m 39s**; 0.59 CPU h (head 0.19 + 4 download jobs 0.40; download jobs get
+  `process_low` = 2 CPU, 12 GB and use ~0.5% CPU).
+- `SRA_FASTQ_FTP` task realtime: 1m 59s – 4m 20s per file, all 4 in parallel → **~0.5–1 MB/s per file**
+  (111–141 MB each), ~1.7 MB/s aggregate. Slow but fine at this size; for big studies this is the limit to watch.
+- `md5sum -c` against ENA's md5 passed in every task; file sizes equal ENA `fastq_bytes` exactly.
+- Outputs (`ftp/results/`): `fastq/*.fastq.gz` (4 files, 518,601,963 bytes, 495 MB), `fastq/md5/*.md5`,
+  `metadata/*.runinfo_ftp.tsv`, `samplesheet/{samplesheet.csv,id_mappings.csv,multiqc_config.yml}`, `pipeline_info/`.
+- The work dir also holds a full copy of the FASTQs (`publish_dir_mode = copy`): 495 MB on scratch.
+- `~/.ncbi` unchanged (ftp doesn't use sra-tools).
