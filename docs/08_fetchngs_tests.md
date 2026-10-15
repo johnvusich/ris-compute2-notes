@@ -150,6 +150,7 @@ for the head job plus all task jobs.
 | 2 | 2026-10-15 | 1.12.0 | ftp | 3543588 | `-r 1.12.0` | `SRA_FASTQ_FTP` exit 4: `wget: unable to resolve host address 'ftp.sra.ebi.ac.uk'`, after Apptainer `WARNING: Skipping mount .../etc/resolv.conf [files]: /etc/resolv.conf doesn't exist in container` | Failed: metadata steps OK, all 4 downloads failed ×3 tries; 3m 37s, 0.29 CPU h |
 | 3 | 2026-10-15 | 1.12.0 | ftp | 3543676 | `-c fetchngs_1.12.0_wget.config` (SRA_FASTQ_FTP container → 1.13.0's Wave `gzip_wget` image) | — | **Succeeded**: 4/4 FASTQs, md5 OK; 5m 39s, 0.59 CPU h (metadata tasks cached) |
 | 4 | 2026-10-15 | 1.12.0 | sratools | 3543725 | `--download_method sratools` (same config as #3) | — | **Succeeded** first try: 4/4 FASTQs; 7m 54s, 0.75 CPU h |
+| 5 | 2026-10-15 | 1.12.0 | aspera | 3543820 | `--download_method aspera` (same config as #3) | `ascp: failed to authenticate, exiting.` / `Session Stop  (Error: failed to authenticate)` (exit 1) | Failed: all 4 `ASPERA_CLI` tasks (no retry: exit 1 isn't a retry code); 3m 23s, 0.26 CPU h |
 
 ### Attempt 2 (ftp, 1.12.0): DNS failure inside the wget container
 
@@ -218,3 +219,16 @@ Same command as attempt 3 with `sratools` (the wget override is passed but unuse
               +                                              +SRR23753576.1 1 length=85
               ??????????????????????...                      AAAAA/6EEA/#EAEEEEAEEEE6EA#E6...
   ```
+
+### Attempt 5 (aspera, 1.12.0): authentication rejected
+
+- Metadata tasks fine; all 4 `ASPERA_CLI` tasks exit 1 with `ascp: failed to authenticate, exiting.` (3 within
+  ~13 ms, one after 1m 30s). Head job 3543820, 3m 23s, 0.26 CPU h.
+- TCP 33001 to `fasp.sra.ebi.ac.uk` is open (probe) and the SSH handshake reaches authentication, so this is not a
+  network block: ENA's Aspera server rejects the key.
+- 1.12.0 runs `ascp -QT -l 300m -P33001 -i /usr/local/etc/aspera/aspera_bypass_dsa.pem era-fasp@fasp.sra.ebi.ac.uk:...`
+  with the **DSA** bypass key from the aspera-cli 4.14.0 image. 1.13.0's module instead uses an **RSA** bypass key it
+  ships in `modules/local/aspera_cli/assets/aspera_bypass_rsa.pem` (and installs `ascp` at runtime via
+  `ascli conf ascp install`, since aspera-cli 4.20.0 no longer bundles it).
+- Plan for attempt 6 (last allowed for aspera): keep 1.12.0's image and `ascp`, swap only the key (RSA), after a
+  manual one-file test on a compute node.
