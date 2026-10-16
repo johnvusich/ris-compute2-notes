@@ -82,10 +82,11 @@ srun --account=compute2-sheila.stewart --partition=general-interactive \
 ## Siteman Compute2 condo
 
 The Siteman Cancer Center condo is like a buy-in node, containing dedicated hardware we can
-use at no cost instead of the `general-*` partitions. *(my unverified note: "no cost" not confirmed, see Billing row)*
+use at no cost instead of the `general-*` partitions. *[Siteman email: confirmed, see Billing and Usage rules rows]*
 
 Checked 2026-10-16 (Slurm 25.05.5). Labels: **[live]** = verified from live Slurm,
-**[RIS docs]** = from RIS documentation, **[unverified]** = my unverified note.
+**[RIS docs]** = from RIS documentation, **[Siteman email]** = from the Siteman condo admins' announcement
+and my access-approval email (Oct 2026), **[unverified]** = my unverified note.
 Test jobs and full details: [10_siteman_condo.md](10_siteman_condo.md).
 
 ```bash
@@ -102,12 +103,13 @@ sacctmgr show qos condo-siteman-qos                                    # limits 
 | QOS | My note said `compute2-sheila.stewart`. **Clarified:** that is my association QOS; the partition also has its own partition QOS `condo-siteman-qos` (`scontrol show partition`). Condo jobs report QOS `compute2-sheila.stewart` in `sacct` (jobs 3555065-3555068); `condo-siteman-qos` applies silently as the limit set. Don't pass `--qos=condo-siteman-qos`; access is via the partition, not the QOS. | [live] |
 | Who may use | Unix groups in `AllowGroups`: `ris`, `compute2-sitemanadmin` and 13 lab groups incl. **`compute2-sheila.stewart`** (I'm in it: `id`). `AllowAccounts=ALL`, `AllowQos=ALL`. | [live] |
 | Hardware | **1 node**, `c2-node-115`: AMD Zen 5, 2 sockets × 128 cores, `ThreadsPerCore=2` → Slurm counts **512 CPUs** (256 physical cores), `RealMemory=1392505` MB (≈1.33 TiB usable), no GPUs. Not in any other partition. | [live] `scontrol show node` |
-| Limits (max time, cores, GPUs) | My note: `256 CPU cores and ~1.5 TB of memory`. **Clarified:** that is the *whole node* (256 physical cores = 512 Slurm CPUs; ~1.39 TB = 1.33 TiB schedulable), not a per-user limit. `condo-siteman-qos` has **no** per-user/per-job/max-jobs limits; partition `MaxTime=28-00:00:00`, `MaxNodes=UNLIMITED`. Effective cap = the node, shared with every lab in `AllowGroups`. | [live] |
+| Limits (max time, cores, GPUs) | My note: `256 CPU cores and ~1.5 TB of memory` (same wording as the Siteman announcement). **Clarified:** that is the *whole node* (256 physical cores = 512 Slurm CPUs; ~1.39 TB = 1.33 TiB schedulable), not a per-user limit. `condo-siteman-qos` has **no** per-user/per-job/max-jobs limits; partition `MaxTime=28-00:00:00`, `MaxNodes=UNLIMITED`. Effective cap = the node, shared with every lab in `AllowGroups`. | [live] |
 | Default time | **28 days** (`DefaultTime=28-00:00:00`); general-cpu default is 8 h. **Always set `--time`** on the condo. | [live] |
 | Default memory | Global `DefMemPerCPU=4000` (MB); partition `DefMemPerNode=UNLIMITED` (= not set). | [live] `scontrol show config` |
 | Preemption | Partition `PreemptMode=OFF`; cluster uses `preempt/partition_prio`, and node-115 is in no other partition, so nothing can preempt condo jobs. | [live] |
 | Priority | `PriorityTier=60`, `PriorityJobFactor=100` (general-cpu: 7000 / 50). All `PriorityWeight*` = 0, so in practice FIFO + backfill; tiers only matter between partitions sharing nodes, which the condo doesn't. | [live] |
-| Billing (counts against lab subsidy?) | My note: No. **Unverified, sources disagree:** RIS site says condos have "no service fees"; Compute Platform Policies says condo buyers pay "server plus an operational fee"; neither says whether *non-owner* labs are charged for condo hours. Slurm defines `billing=512` TRES on the node (same 1 billing/CPU as general-cpu), which doesn't prove a charge. **Ask RIS.** | [RIS docs] + [unverified] |
+| Billing (counts against lab subsidy?) | **No (verified).** Jobs on `condo-siteman` are free for Siteman members and don't count toward the group's Compute2 subsidy; jobs on every other partition are billed as usual. The `billing` TRES Slurm records on condo jobs (e.g. `billing=2` for `-c 1`) is just accounting, not a charge. (RIS docs only cover what condo *owners* pay: "no service fees" vs "server plus an operational fee".) | [Siteman email] |
+| Usage rules | Only for **cancer-related research** by Siteman investigators and their labs. Use resources efficiently; request only what the job needs and don't hold idle CPUs, GPUs, memory, or storage. Access can be revoked at any time. Getting access: have a Compute2 account, fill in Siteman's request form, then Siteman asks RIS to add you. None of this is enforced in Slurm (`condo-siteman-qos` has no limits). | [Siteman email] |
 | Visibility | `PrivateData` hides other users' jobs in `squeue`, so condo load can't be seen except via `sinfo`/`scontrol show node` (CPUAlloc). | [live] |
 
 RIS docs used: [Compute Platform Policies](https://washu.atlassian.net/wiki/spaces/RUD/pages/3403546664/Compute+Platform+Policies)

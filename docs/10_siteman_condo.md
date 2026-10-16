@@ -4,11 +4,12 @@
 > `-profile test` both succeeded on the condo on the first attempt (no failed attempts).
 > 244 Slurm jobs, **0.833 CPU h** total (`sacct -X -u $USER -S 2026-10-16T09:40`), all COMPLETED.
 > Key gotchas: **default time is 28 days**, **`-c 1` becomes 2 CPUs** (SMT node), it's **one shared node**
-> with no per-user limits, and **billing for non-owner labs is unconfirmed** (see Open questions).
+> with no per-user limits. **Free for Siteman members** (no charge, no subsidy use) but only for cancer-related work,
+> per the Siteman condo admins' emails.
 
 Branch `siteman-condo-test`. Test dir: `/storage3/fs1/sheila.stewart/Active/john.v/tests/siteman_condo/`
 (`logs/` inside). Fact sources are labelled as in [03_slurm_accounts.md](03_slurm_accounts.md):
-**[live]** = live Slurm, **[RIS docs]**, **[unverified]**.
+**[live]** = live Slurm, **[RIS docs]**, **[Siteman email]** = Siteman condo admins' announcement / approval email, **[unverified]**.
 
 ## 1. Zero-compute checks (`sbatch --test-only`)
 
@@ -123,7 +124,8 @@ faster in sum, plausibly Zen 5 vs Xeon Gold 6548Y+; single run, not a benchmark)
 | Priority | Tier 7000, JobFactor 50; all priority weights 0 | Tier 60, JobFactor 100 | [live] |
 | Queue wait observed today | 1-2 s | 1 s | [live] (one morning, both idle) |
 | `--test-only` start estimate | ~22 h (wrong) | now | [live] |
-| Cost | billed per use (RIS docs) | **unknown** for non-owners (RIS docs conflict) | [RIS docs] / [unverified] |
+| Cost | billed per use, counts against subsidy | **free**, doesn't count toward subsidy | [RIS docs] / [Siteman email] |
+| Who / what for | any Compute2 user | Siteman members' **cancer-related** research only; access revocable | [Siteman email] |
 
 ## Recommended snippets
 
@@ -161,7 +163,7 @@ Head job on the condo: [`scripts/run_nf_condo.sbatch`](../scripts/run_nf_condo.s
 ## Troubleshooting
 
 - **Job sits with a 28-day limit / blocks backfill** → forgot `--time`; condo `DefaultTime=28-00:00:00`.
-- **Asked for 1 CPU, `sacct` shows 2 (and billing=2)** → expected: condo node has 2 threads/core and Slurm allocates whole cores.
+- **Asked for 1 CPU, `sacct` shows 2 (and billing=2)** → expected: condo node has 2 threads/core and Slurm allocates whole cores. `billing` is accounting only; condo jobs aren't charged.
 - **More memory than expected without `--mem`** → default is 4000 MB per *allocated* CPU, and allocation was rounded up.
 - **`Invalid qos specification`** → don't pass `--qos=condo-siteman-qos`; it's the partition's QOS, not mine. Omit `--qos` or use `compute2-sheila.stewart`.
 - **`Invalid account or account/partition combination`** → missing `-A compute2-sheila.stewart` (same as general).
@@ -174,15 +176,16 @@ Head job on the condo: [`scripts/run_nf_condo.sbatch`](../scripts/run_nf_condo.s
 
 ## Open questions for RIS
 
-1. Are **non-owner labs charged** for `condo-siteman` CPU hours (does it count against the $2,800/yr subsidy)?
-   RIS site says condos have "no service fees"; Compute Platform Policies says "server plus an operational fee";
-   Slurm defines `billing` TRES on the node.
-2. Are there Siteman **usage policies** (fair use, max share of the node) not enforced in Slurm? Policies page says
-   condo usage policies are "set and monitored by the condo owner"; `condo-siteman-qos` has no limits.
-3. Is the 28-day **DefaultTime** intentional? Short defaults would help backfill on a single shared node.
-4. Is billing on the condo per allocated CPU (so `-c 1` is billed as 2)?
-5. Is more condo hardware planned (currently 1 node), and is it ever shared to `general-preempt-cpu`?
-6. The Compute2 Cluster page's `sinfo` example still lists old partition names (`general`, `gpu`, `bigmem`).
+Answered by the Siteman condo admins' emails: condo jobs are **free** and don't count toward the subsidy;
+use is limited to cancer-related research, should be efficient, and access is revocable.
+
+Still open (for Siteman admins or RIS):
+
+1. Is there a concrete fair-share expectation (e.g. max share of the node per lab) behind "reasonable efforts"?
+   `condo-siteman-qos` enforces nothing.
+2. Is the 28-day **DefaultTime** intentional? Short defaults would help backfill on a single shared node.
+3. Is more condo hardware planned (currently 1 node), and is it ever shared to `general-preempt-cpu`?
+4. The Compute2 Cluster page's `sinfo` example still lists old partition names (`general`, `gpu`, `bigmem`).
 
 ## Not tested (on purpose)
 
