@@ -87,7 +87,7 @@ use at no cost instead of the `general-*` partitions. *[Siteman email: confirmed
 Checked 2026-10-16 (Slurm 25.05.5). Labels: **[live]** = verified from live Slurm,
 **[RIS docs]** = from RIS documentation, **[Siteman email]** = from the Siteman condo admins' announcement
 and my access-approval email (Oct 2026), **[unverified]** = my unverified note.
-Test jobs and full details: [10_siteman_condo.md](10_siteman_condo.md).
+Test jobs: [07_pipeline_tests.md, T5](07_pipeline_tests.md#t5-siteman-condo-probes-hello-rnaseq); condo reference: [09_siteman_condo.md](09_siteman_condo.md).
 
 ```bash
 sacctmgr show assoc user=$USER format=account%40,partition%25,qos%40   # NO separate condo account/QOS appears
@@ -123,7 +123,7 @@ To switch a pipeline to the condo, change **both**:
 2. `process.queue` / `process.clusterOptions` in `nextflow.config` (child jobs)
 
 Tip: keep a second config, e.g. `~/.config/nextflow/nextflow_siteman.config`, and pick
-one with `-c`. *[Done: `templates/siteman_condo.config`, tested with hello and rnaseq; see [10_siteman_condo.md](10_siteman_condo.md).]*
+one with `-c`. *[Done: `templates/siteman_condo.config`, tested with hello and rnaseq; see [09_siteman_condo.md](09_siteman_condo.md).]*
 
 ## Billing
 
