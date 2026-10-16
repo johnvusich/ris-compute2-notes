@@ -71,12 +71,12 @@ srun --account=compute2-sheila.stewart --partition=general-interactive \
      --cpus-per-task=2 --mem=8G --time=2:00:00 --pty bash
 ```
 
-## Siteman Compute2 condo (access requested — pending)
+## Siteman Compute2 condo
 
 The Siteman Cancer Center condo is like a buy-in node, containing dedicated hardware we can
 use at no cost instead of the `general-*` partitions.
 
-Once access is granted, look up the details:
+Use these commands to look up the details if you have or have requested access:
 
 ```bash
 sacctmgr show assoc user=$USER format=account%40,partition%25,qos%40   # new account/QOS should appear
@@ -85,11 +85,11 @@ sinfo -s                                                               # find th
 
 | Field | Value |
 |---|---|
-| Account | `TODO` |
+| Account | `compute2-sheila.stewart` |
 | Partition | `TODO` |
-| QOS | `TODO` |
-| Billing (counts against lab subsidy?) | `TODO — ask RIS / Siteman` |
-| Limits (max time, cores, GPUs) | `TODO` |
+| QOS | `compute2-sheila.stewart` |
+| Billing (counts against lab subsidy?) | No |
+| Limits (max time, cores, GPUs) | `256 CPU cores and ~1.5 TB of memory` |
 
 To switch a pipeline to the condo, change **both**:
 
