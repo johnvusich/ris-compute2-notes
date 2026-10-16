@@ -24,6 +24,9 @@ tail -f logs/*.log
 | 2026-10-14 | cutandrun | dev (`d59714a5`) | 25.10.0 | 3537574 | 133 | 17m 29s | 1.0 | Succeeded (2 PRESEQ_LCEXTRAP errors ignored); see [08_cutandrun_dev_test.md](08_cutandrun_dev_test.md) |
 | 2026-10-15 | fetchngs | 1.13.0 | 25.10.0 | 3543545 | 0 | 19s | 0.01 | Failed at launch: needs Nextflow >= 25.10.4; see [08_fetchngs_tests.md](08_fetchngs_tests.md) |
 | 2026-10-15 | fetchngs | 1.12.0 | 25.10.0 | 3543676 (ftp), 3543725 (sratools), 3543820 (aspera) | 17 (8 cached) / 22 / 12 | 5m 39s / 7m 54s / 3m 23s | 0.59 / 0.75 / 0.26 | ftp succeeded with wget container override; sratools succeeded as-is (recommended); aspera blocked (ascp SSH key exchange fails); see [08_fetchngs_tests.md](08_fetchngs_tests.md) |
+| 2026-10-16 | (Slurm probe, condo-siteman vs general-cpu) | - | - | 3555065-3555068 | 4 jobs | 3-6 s each | <0.01 | Succeeded; condo starts in 1 s, rounds `-c 1` up to 2 CPUs, default time 28 d; see [10_siteman_condo.md](10_siteman_condo.md) |
+| 2026-10-16 | hello (nextflow-io) | v1.3 | 25.10.0 | 3555072 | 4 | 1m 3s | 0.11 | Succeeded on `condo-siteman` (head + tasks); see [10_siteman_condo.md](10_siteman_condo.md) |
+| 2026-10-16 | rnaseq on condo-siteman | 3.26.0 | 25.10.0 | 3555087 | 234 | 6m 0s | 0.72 | Succeeded first try (containers cached; per-task ~1.8x faster than general-cpu run; queue wait same); see [10_siteman_condo.md](10_siteman_condo.md) |
 
 ## Attempt log: cutandrun 3.2.2
 
@@ -47,4 +50,5 @@ Between 6 and 7, `~/.nextflow/assets/nf-core/` was deleted by hand, so attempt 7
 - cutandrun 3.2.2 declares Nextflow `!>=23.04.0` but fails to parse on 25.10.0; use `NXF_VER=24.04.4`.
 - fetchngs 1.13.0 needs Nextflow >= 25.10.4; used 1.12.0 (no `NXF_VER`). fetchngs runs one launch dir per download method:
   `tests/fetchngs_1.12.0/<method>/`, work dir `$SCRATCH/nf_work/tests/fetchngs_1.12.0_<method>`.
+- rnaseq 3.26.0 general-cpu (3284986) CPU h: the table's 0.5 predates `nf_trace_cpuh.py`; re-measured 2026-10-16 it is 0.81 task + 0.92 head = **1.73 allocated CPU h** (its 27 min included 26 first-time container pulls).
 - rnaseq test was launched before this layout; its files are in `tests/rnaseq_test_launch/` and `tests/rnaseq_test/`.
