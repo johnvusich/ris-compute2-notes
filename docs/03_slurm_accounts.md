@@ -73,8 +73,8 @@ srun --account=compute2-sheila.stewart --partition=general-interactive \
 
 ## Siteman Compute2 condo (access requested — pending)
 
-The Siteman Cancer Center condo is like an MSU buy-in node: dedicated hardware I can
-use instead of the `general-*` partitions.
+The Siteman Cancer Center condo is like a buy-in node, containing dedicated hardware we can
+use at no cost instead of the `general-*` partitions.
 
 Once access is granted, look up the details:
 
