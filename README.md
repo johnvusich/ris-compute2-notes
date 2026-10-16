@@ -96,3 +96,12 @@ sacct -X -u $USER -S today          # today's jobs incl. finished
 scancel <jobid>                     # cancel one job
 scancel -u $USER                    # cancel all my jobs
 ```
+
+## Where to get help
+
+- RIS docs: https://washu.atlassian.net/wiki/spaces/RUD/overview
+- Compute2 Nextflow page: https://washu.atlassian.net/wiki/spaces/RUD/pages/2087682083/C2+Nextflow
+- Compute2 storage page: https://washu.atlassian.net/wiki/spaces/RUD/pages/2336653380/Storage+Access+on+Compute2
+- RIS Service Desk (tickets + docs-aware chatbot), 15-min virtual office hours Mon–Thu
+
+Also, can email me at john.v at wustl dot edu with any questions and I should be able to help or direct you to someone who can help.
