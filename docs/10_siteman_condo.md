@@ -39,3 +39,29 @@ Findings [live]:
   `billing=2`. general-cpu nodes have `ThreadsPerCore=1`, so `-c 1` → 1 CPU. Ask for even `-c` on the condo.
 - Because default memory is per CPU, the rounding doubles default memory too (8000M, not 4000M).
 - Both have `Requeue=1` (jobs can be requeued after node failure); neither partition preempts.
+
+## 3. Nextflow: nextflow-io/hello on the condo
+
+Config: [`templates/siteman_condo.config`](../templates/siteman_condo.config), loaded after the global config.
+Head job: [`scripts/run_nf_condo.sbatch`](../scripts/run_nf_condo.sbatch) (head job also on `condo-siteman`, `-c 2 --mem=4G -t 1:00:00`).
+Launch dir `tests/hello_v1.3_condo/`, work dir `$SCRATCH/nf_work/tests/hello_v1.3_condo`.
+
+```bash
+cd /storage3/fs1/sheila.stewart/Active/john.v/tests/hello_v1.3_condo     # contains logs/
+sbatch -J nf-hello-condo ~/ris-compute2-notes/scripts/run_nf_condo.sbatch nextflow-io/hello v1.3 none
+```
+
+| # | Job ID | Change | Result |
+|---|---|---|---|
+| 10 | 3555072 (head), 3555074-3555077 (tasks) | first attempt, config as committed | **Succeeded**, 1m 3s. 4 `sayHello` tasks, all `condo-siteman` / `c2-node-115`, each started 1-2 s after submit, `AllocCPUS=2` (core rounding), `Timelimit=01:00:00` (from `process.time`). 0.111 CPU h allocated (`nf_trace_cpuh.py`). |
+
+Effective config check (zero compute; note `nextflow config` takes `-c` *before* the subcommand and has no `-r`):
+
+```bash
+nextflow -c ~/.config/nextflow/nextflow.config -c ~/ris-compute2-notes/templates/siteman_condo.config \
+  config nf-core/rnaseq -profile test,apptainer | grep -E 'resourceLimits|queue|clusterOptions'
+```
+
+This showed `resourceLimits = [cpus:64, memory:'256 GB', time:'2d']`: **a later `-c` file replaces the
+test profile's own `resourceLimits` (4 CPU / 15 GB / 1 h)**, so test-profile runs would request full-size
+resources. For the rnaseq test I add [`templates/nfcore_test_caps.config`](../templates/nfcore_test_caps.config) last.
