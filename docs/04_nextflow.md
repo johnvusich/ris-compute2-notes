@@ -94,15 +94,10 @@ Works only while the work dir on scratch still exists (< 28 days from creation).
 - Clean up scratch when done: `rm -rf $SCRATCH/nf_work/<project>/<analysis>`
   (or let the 28-day purge do it).
 
-## Test run (Oct 2026)
+## Test runs
 
-```bash
-nextflow run nf-core/rnaseq -r 3.26.0 -profile test \
-  -c ~/.config/nextflow/nextflow.config \
-  -work-dir /scratch2/fs1/sheila.stewart/john.v/nf_work/rnaseq_test \
-  --outdir /storage3/fs1/sheila.stewart/Active/john.v/tests/rnaseq_test \
-  -resume
-```
+All test runs (commands, attempts, results) are in [07_pipeline_tests.md](07_pipeline_tests.md).
+The first rnaseq test (2026-10-02, job 3284986, succeeded on attempt 4) is T1 there.
 
 ## Container engine
 - Engine is selected with `-profile singularity` (or `apptainer`), not in the global config.
@@ -110,10 +105,3 @@ nextflow run nf-core/rnaseq -r 3.26.0 -profile test \
   check `workflow.containerEngine == 'singularity'` to pull native Singularity images;
   with `apptainer` they fall back to converting Docker images.
 - Tests: `-profile test,singularity`
-
----
-
-Modules: `ris nextflow/25.10.0 apptainer/1.3.6`.
-Launch dir: `/storage3/fs1/sheila.stewart/Active/john.v/tests/rnaseq_test_launch`.
-Submitted from `~`, so the Slurm log went to home (see troubleshooting).
-Status: running at time of writing — **TODO: record outcome, runtime, and job ID.**

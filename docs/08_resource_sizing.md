@@ -88,7 +88,7 @@ stay fixed on retry (CPU is what's billed).
 
 ```groovy
 // custom.config — right-sized requests for nf-core/cutandrun (dev d59714a5) on Compute2.
-// Basis: docs/09_resource_sizing.md. Heavy-step values are estimates until a pilot run calibrates them.
+// Basis: docs/08_resource_sizing.md. Heavy-step values are estimates until a pilot run calibrates them.
 
 process {
     // Allow 2 retries (pipeline default 1) since requests are tighter; same exit codes as the pipeline:
