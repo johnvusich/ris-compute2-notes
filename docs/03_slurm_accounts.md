@@ -86,7 +86,7 @@ sinfo -s                                                               # find th
 | Field | Value |
 |---|---|
 | Account | `compute2-sheila.stewart` |
-| Partition | `TODO` |
+| Partition | `condo-siteman` |
 | QOS | `compute2-sheila.stewart` |
 | Billing (counts against lab subsidy?) | No |
 | Limits (max time, cores, GPUs) | `256 CPU cores and ~1.5 TB of memory` |
