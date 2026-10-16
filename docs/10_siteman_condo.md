@@ -1,6 +1,10 @@
 # Siteman condo (`condo-siteman`) vs `general-cpu`
 
-**Status: IN PROGRESS** (2026-10-16): Slurm checks done; Nextflow tests next.
+> **DONE** (2026-10-16). Condo works with my existing account; nextflow-io/hello and nf-core/rnaseq 3.26.0
+> `-profile test` both succeeded on the condo on the first attempt (no failed attempts).
+> 244 Slurm jobs, **0.833 CPU h** total (`sacct -X -u $USER -S 2026-10-16T09:40`), all COMPLETED.
+> Key gotchas: **default time is 28 days**, **`-c 1` becomes 2 CPUs** (SMT node), it's **one shared node**
+> with no per-user limits, and **billing for non-owner labs is unconfirmed** (see Open questions).
 
 Branch `siteman-condo-test`. Test dir: `/storage3/fs1/sheila.stewart/Active/john.v/tests/siteman_condo/`
 (`logs/` inside). Fact sources are labelled as in [03_slurm_accounts.md](03_slurm_accounts.md):
@@ -65,3 +69,121 @@ nextflow -c ~/.config/nextflow/nextflow.config -c ~/ris-compute2-notes/templates
 This showed `resourceLimits = [cpus:64, memory:'256 GB', time:'2d']`: **a later `-c` file replaces the
 test profile's own `resourceLimits` (4 CPU / 15 GB / 1 h)**, so test-profile runs would request full-size
 resources. For the rnaseq test I add [`templates/nfcore_test_caps.config`](../templates/nfcore_test_caps.config) last.
+
+## 4. Nextflow: nf-core/rnaseq 3.26.0 `-profile test` on the condo
+
+Launch dir `tests/rnaseq_3.26.0_condo/`, work dir `$SCRATCH/nf_work/tests/rnaseq_3.26.0_condo`.
+Resource caps: `process.resourceLimits` (supported by rnaseq 3.26.0), restored to the test profile's values by
+`nfcore_test_caps.config` (checked with `nextflow config` before submitting, see section 3).
+
+```bash
+cd /storage3/fs1/sheila.stewart/Active/john.v/tests/rnaseq_3.26.0_condo    # contains logs/
+sbatch -J nf-rnaseq-condo -t 1:30:00 ~/ris-compute2-notes/scripts/run_nf_condo.sbatch \
+  nf-core/rnaseq 3.26.0 test,apptainer ~/ris-compute2-notes/templates/nfcore_test_caps.config
+```
+
+| # | Job ID | Change vs hello | Result |
+|---|---|---|---|
+| 11 | 3555087 (head) + 234 task jobs | pipeline → rnaseq 3.26.0 `test,apptainer`, + `nfcore_test_caps.config`, head `-t 1:30:00` | **Succeeded**, 6m 0s, 234/234 COMPLETED, all on `c2-node-115`. |
+
+Compared with my general-cpu run (job 3284986, 2026-10-02), both measured with the same tools
+(`scripts/nf_trace_cpuh.py` + `sacct` on the task IDs in each run's `execution_trace`):
+
+| | general-cpu (3284986) | condo-siteman (3555087) |
+|---|---|---|
+| Tasks | 234 COMPLETED | 234 COMPLETED |
+| Head job wall time | 27m 28s | 6m 0s |
+| Container pulls during run | 26 (first-ever run; pulls span 12:26-12:50) | 0 (all cached in `apptainer_cache`) |
+| Task queue wait (submit→start) | median 1 s, max 3 s | median 1 s, max 3 s |
+| Sum of task wall times | 16.8 min (longest task 68 s) | 9.1 min (longest task 41 s) |
+| Task CPU h allocated | 0.812 | 0.515 |
+| Head CPU h allocated | 0.916 | 0.200 |
+| **Total CPU h allocated** | **1.728** (07 table says 0.5; that likely counted tasks' used CPU only) | **0.715** |
+| CPU rounding | none | 82 tasks asked 1 CPU → got 2; 2- and 4-CPU tasks unchanged |
+| Config changes needed | — | `queue`, `process.time`, and restoring test caps (`nfcore_test_caps.config`) |
+
+Read with care: the 27 min → 6 min wall-time drop is **mostly the container cache**, not the condo.
+The fair comparisons are queue wait (identical, both idle at test time) and per-task runtime (condo ~1.8×
+faster in sum, plausibly Zen 5 vs Xeon Gold 6548Y+; single run, not a benchmark).
+
+## Condo vs general-cpu
+
+| | `general-cpu` | `condo-siteman` | Source |
+|---|---|---|---|
+| Account | `compute2-sheila.stewart` | same | [live] |
+| QOS shown on job (`sacct`, `SLURM_JOB_QOS`) | `compute2-sheila.stewart` | same | [live] jobs 3555065/66 |
+| Partition QOS (limits) | `general-cpu-qos` | `condo-siteman-qos` (can't request it) | [live] |
+| Access | `AllowGroups=compute2,ris` (everyone) | `ris`, `compute2-sitemanadmin` + 13 lab groups incl. `compute2-sheila.stewart` | [live] |
+| Nodes | 77 × Intel Xeon Gold 6548Y+ (Emerald Rapids), 64 CPU, ~0.8-0.9 TiB, 1 thread/core | **1** × AMD EPYC 9755 (Zen 5), 512 CPU = 256 cores × 2 threads, 1.33 TiB | [live] |
+| Per-user limit | 128 CPU, 2 TB mem, 100 jobs | **none** (only the node itself) | [live] = [RIS docs] for general-cpu |
+| Max / default time | 15 d / 8 h | 28 d / **28 d** | [live] jobs 3555068 |
+| Default memory | 4000 MB per CPU | 4000 MB per *allocated* CPU (→ 8000 MB for `-c 1`) | [live] job 3555067 |
+| `-c 1` gets | 1 CPU, billing=1 | **2 CPUs, billing=2** | [live] |
+| Preemption | off | off (node in no other partition) | [live] |
+| Priority | Tier 7000, JobFactor 50; all priority weights 0 | Tier 60, JobFactor 100 | [live] |
+| Queue wait observed today | 1-2 s | 1 s | [live] (one morning, both idle) |
+| `--test-only` start estimate | ~22 h (wrong) | now | [live] |
+| Cost | billed per use (RIS docs) | **unknown** for non-owners (RIS docs conflict) | [RIS docs] / [unverified] |
+
+## Recommended snippets
+
+sbatch (always set `--time`; use even `--cpus-per-task`):
+
+```bash
+#SBATCH --account=compute2-sheila.stewart
+#SBATCH --partition=condo-siteman
+#SBATCH --cpus-per-task=2            # 1 core; odd numbers are rounded up anyway
+#SBATCH --mem=8G
+#SBATCH --time=04:00:00              # default would be 28 days
+```
+
+Nextflow: keep the global config, add [`templates/siteman_condo.config`](../templates/siteman_condo.config):
+
+```groovy
+process {
+    executor       = 'slurm'
+    queue          = 'condo-siteman'
+    clusterOptions = '--account=compute2-sheila.stewart'
+    time           = '1h'                                     // only for processes with no time of their own
+    resourceLimits = [ cpus: 64, memory: 256.GB, time: 48.h ] // node is shared, no per-user limits
+}
+```
+
+```bash
+nextflow run nf-core/<pipeline> -r <ver> -profile apptainer \
+  -c ~/.config/nextflow/nextflow.config \
+  -c ~/ris-compute2-notes/templates/siteman_condo.config \
+  [-c ~/ris-compute2-notes/templates/nfcore_test_caps.config]   # only with -profile test
+```
+
+Head job on the condo: [`scripts/run_nf_condo.sbatch`](../scripts/run_nf_condo.sbatch) (`-c 2 --mem=4G`, set `-t`).
+
+## Troubleshooting
+
+- **Job sits with a 28-day limit / blocks backfill** → forgot `--time`; condo `DefaultTime=28-00:00:00`.
+- **Asked for 1 CPU, `sacct` shows 2 (and billing=2)** → expected: condo node has 2 threads/core and Slurm allocates whole cores.
+- **More memory than expected without `--mem`** → default is 4000 MB per *allocated* CPU, and allocation was rounded up.
+- **`Invalid qos specification`** → don't pass `--qos=condo-siteman-qos`; it's the partition's QOS, not mine. Omit `--qos` or use `compute2-sheila.stewart`.
+- **`Invalid account or account/partition combination`** → missing `-A compute2-sheila.stewart` (same as general).
+- **nf-core test run requests 12 CPU / 72 GB tasks** → a later `-c` config's `process.resourceLimits` replaced the test profile's caps; add `nfcore_test_caps.config` last. Check with
+  `nextflow -c A -c B config nf-core/<p> -profile test,apptainer | grep resourceLimits` (`-c` goes before `config`; `config` has no `-r`).
+- **`nextflow: command not found` in a one-liner** → `module load ... | tail` runs in a subshell; load modules on their own line.
+- **Can't see who else is on the condo** → `squeue` hides other users (`PrivateData`); use `scontrol show node c2-node-115 | grep -E 'CPUAlloc|AllocMem'`.
+- **`sbatch --test-only` says general-cpu won't start until tomorrow** → ignore; the real job started in 2 s.
+- nf-core writes `execution_trace` to `results/pipeline_info/`, not the launch dir, even with `-with-trace`.
+
+## Open questions for RIS
+
+1. Are **non-owner labs charged** for `condo-siteman` CPU hours (does it count against the $2,800/yr subsidy)?
+   RIS site says condos have "no service fees"; Compute Platform Policies says "server plus an operational fee";
+   Slurm defines `billing` TRES on the node.
+2. Are there Siteman **usage policies** (fair use, max share of the node) not enforced in Slurm? Policies page says
+   condo usage policies are "set and monitored by the condo owner"; `condo-siteman-qos` has no limits.
+3. Is the 28-day **DefaultTime** intentional? Short defaults would help backfill on a single shared node.
+4. Is billing on the condo per allocated CPU (so `-c 1` is billed as 2)?
+5. Is more condo hardware planned (currently 1 node), and is it ever shared to `general-preempt-cpu`?
+6. The Compute2 Cluster page's `sinfo` example still lists old partition names (`general`, `gpu`, `bigmem`).
+
+## Not tested (on purpose)
+
+Preemption, limit-breaking, GPUs (none on the condo), multi-node jobs, real data.

@@ -99,7 +99,7 @@ sacctmgr show qos condo-siteman-qos                                    # limits 
 |---|---|---|
 | Account | `compute2-sheila.stewart` (same as general; no separate condo account exists) | [live] `sacctmgr show assoc` |
 | Partition | `condo-siteman` | [live] `sinfo` |
-| QOS | My note said `compute2-sheila.stewart`. **Clarified:** that is my association QOS; the partition also has its own partition QOS `condo-siteman-qos` (`scontrol show partition`). Which one `sacct` reports for a job: see [10_siteman_condo.md](10_siteman_condo.md). Don't pass `--qos=condo-siteman-qos`; access is via the partition, not the QOS. | [live] |
+| QOS | My note said `compute2-sheila.stewart`. **Clarified:** that is my association QOS; the partition also has its own partition QOS `condo-siteman-qos` (`scontrol show partition`). Condo jobs report QOS `compute2-sheila.stewart` in `sacct` (jobs 3555065-3555068); `condo-siteman-qos` applies silently as the limit set. Don't pass `--qos=condo-siteman-qos`; access is via the partition, not the QOS. | [live] |
 | Who may use | Unix groups in `AllowGroups`: `ris`, `compute2-sitemanadmin` and 13 lab groups incl. **`compute2-sheila.stewart`** (I'm in it: `id`). `AllowAccounts=ALL`, `AllowQos=ALL`. | [live] |
 | Hardware | **1 node**, `c2-node-115`: AMD Zen 5, 2 sockets × 128 cores, `ThreadsPerCore=2` → Slurm counts **512 CPUs** (256 physical cores), `RealMemory=1392505` MB (≈1.33 TiB usable), no GPUs. Not in any other partition. | [live] `scontrol show node` |
 | Limits (max time, cores, GPUs) | My note: `256 CPU cores and ~1.5 TB of memory`. **Clarified:** that is the *whole node* (256 physical cores = 512 Slurm CPUs; ~1.39 TB = 1.33 TiB schedulable), not a per-user limit. `condo-siteman-qos` has **no** per-user/per-job/max-jobs limits; partition `MaxTime=28-00:00:00`, `MaxNodes=UNLIMITED`. Effective cap = the node, shared with every lab in `AllowGroups`. | [live] |
@@ -117,11 +117,11 @@ Neither page mentions Siteman; the condo info link `ris.wustl.edu/services/compu
 
 To switch a pipeline to the condo, change **both**:
 
-1. `#SBATCH --account` / `--partition` in the sbatch script (head job)
+1. `#SBATCH --account` / `--partition` in the sbatch script (head job), and **always `--time`** (condo default is 28 days); use even `--cpus-per-task` (odd counts are rounded up to whole 2-thread cores)
 2. `process.queue` / `process.clusterOptions` in `nextflow.config` (child jobs)
 
 Tip: keep a second config, e.g. `~/.config/nextflow/nextflow_siteman.config`, and pick
-one with `-c`.
+one with `-c`. *[Done: `templates/siteman_condo.config`, tested with hello and rnaseq; see [10_siteman_condo.md](10_siteman_condo.md).]*
 
 ## Billing
 
