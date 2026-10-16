@@ -1,6 +1,6 @@
 # MSU ICER (HPCC) vs WashU RIS Compute2
 
-Same Linux command line, very different infrastructure and nomenclature.
+There are many similarities and differences.
 
 ## The two biggest differences
 
@@ -28,7 +28,7 @@ module avail nextflow
 module avail apptainer
 ```
 
-Optional shortcut in `~/.bashrc` (see `templates/bashrc_snippet.sh`):
+Shortcut in `~/.bashrc` (see `templates/bashrc_snippet.sh`) to automatically load ris and slurm upon login:
 
 ```bash
 alias c2='module purge && module load ris slurm/compute2/25.05'
@@ -61,7 +61,7 @@ Details: [02_storage.md](02_storage.md).
 
 ## Checking a directory stored as a variable
 
-Typing a variable alone tries to *run* its value:
+Typing a variable alone tries to *run* its value. Therefore, use the echo command to check directories stored as variables. For example:
 
 ```bash
 $HOME          # bash: /home/john.v: Is a directory   <- wrong
@@ -74,3 +74,5 @@ echo $HOME     # /home/john.v                          <- right
 - Compute2 Nextflow page: https://washu.atlassian.net/wiki/spaces/RUD/pages/2087682083/C2+Nextflow
 - Compute2 storage page: https://washu.atlassian.net/wiki/spaces/RUD/pages/2336653380/Storage+Access+on+Compute2
 - RIS Service Desk (tickets + docs-aware chatbot), 15-min virtual office hours Mon–Thu
+
+Also, can email me at john.v at wustl dot edu with any questions and I should be able to help or direct you to someone who can help.
