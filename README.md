@@ -76,7 +76,7 @@ sinfo -s
 
 - Account: `compute2-sheila.stewart`
 - QOS: `compute2-sheila.stewart`
-- Partition I use: `general-cpu`
+- Partitions I use: `general-cpu` or `condo-siteman`
 
 ### Run an nf-core pipeline
 
