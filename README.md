@@ -16,6 +16,7 @@ Written while learning the system coming from the MSU HPCC (ICER).
 | [docs/07_pipeline_tests.md](docs/07_pipeline_tests.md) | Every test run on Compute2 (rnaseq, cutandrun, fetchngs, Siteman condo), one format |
 | [docs/08_resource_sizing.md](docs/08_resource_sizing.md) | Right-sizing Nextflow resource requests from the test runs |
 | [docs/09_siteman_condo.md](docs/09_siteman_condo.md) | Siteman condo vs general-cpu: comparison, config snippets, troubleshooting |
+| [docs/10_references.md](docs/10_references.md) | Downloading Ensembl genomes/GTFs (BSD `sum` checksums) and MSigDB GMTs (no login, CC BY 4.0) |
 | [templates/](templates/) | `nextflow.config`, sbatch script, `.bashrc` snippet, params file |
 | [scripts/new_analysis.sh](scripts/new_analysis.sh) | Scaffolds a new project/analysis directory |
 

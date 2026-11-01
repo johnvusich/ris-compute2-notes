@@ -83,8 +83,27 @@ Works only while the work dir on scratch still exists (< 28 days from creation).
 
 - Pin the pipeline: `-r <version>`. Check each release's minimum Nextflow version.
   Example: rnaseq **3.27.0 needs Nextflow ≥ 25.10.4**; with module `nextflow/25.10.0` I used **3.26.0**.
+- **Modules change under you**: on 2026-11-01 `nextflow/25.10.0` was gone and `nextflow/25.10.2` was the only one.
+  Run `module spider nextflow` before a project, and do a cheap stub/test run when the version changes. Validated on 25.10.2:
+  rnaseq 3.26.0, differentialabundance 1.5.0 (2.0.0 needs ≥ 25.10.4). See [07, T6](07_pipeline_tests.md).
 - Check modules: `module avail nextflow`, `module avail apptainer`.
 - Record pipeline + module versions in the analysis `README.md`.
+
+## Chaining pipelines (e.g. rnaseq → differentialabundance)
+
+Submit both head jobs at once and let Slurm hold the second:
+
+```bash
+RNA=$(sbatch --parsable run_rnaseq.sbatch)
+sbatch --dependency=afterok:$RNA run_da.sbatch     # squeue shows PENDING (Dependency)
+```
+
+- `afterok` starts the second job only if the first **head job** exits 0, and nf-core head jobs exit non-zero when the pipeline fails.
+  If rnaseq fails, the DA job sits at `DependencyNeverSatisfied`. Cancel it, fix and `-resume` rnaseq, then resubmit DA.
+- In the second script, fail fast if the expected inputs are missing (`[[ -s counts.tsv ]] || exit 1`), and point the params at
+  the absolute paths the first run *will* write (for rnaseq star_salmon:
+  `<outdir>/star_salmon/salmon.merged.gene_counts.tsv` and `salmon.merged.gene_lengths.tsv`).
+- Tested 2026-11-01 ([07, T6](07_pipeline_tests.md)): DA started within seconds of rnaseq finishing.
 
 ## After a run
 
@@ -98,6 +117,13 @@ Works only while the work dir on scratch still exists (< 28 days from creation).
 
 All test runs (commands, attempts, results) are in [07_pipeline_tests.md](07_pipeline_tests.md).
 The first rnaseq test (2026-10-02, job 3284986, succeeded on attempt 4) is T1 there.
+
+`-stub-run` with your real samplesheet is a cheap check of inputs and Slurm submission, but for rnaseq it ends after
+trimming (the empty stub reads fail the trimmed-reads threshold), so alignment and QC processes are never submitted. Check their
+resources with `nextflow -c ... config nf-core/rnaseq -profile apptainer` instead.
+
+Symlinks are a clean way to feed in FASTQs whose real path has spaces: `ln -s "/path with spaces/x.fastq.gz" $SCRATCH/<proj>/fastq/x.fastq.gz`
+and put the symlink paths in the samplesheet. This worked with apptainer in both stub and real rnaseq runs (2026-11-01).
 
 ## Container engine
 - Engine is selected with `-profile singularity` (or `apptainer`), not in the global config.

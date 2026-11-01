@@ -45,13 +45,19 @@ from [`scripts/nf_trace_cpuh.py`](../scripts/nf_trace_cpuh.py).
 | [T5](#t5-siteman-condo-probes-hello-rnaseq) | 2026-10-16 | (Slurm probes) | — | — | condo-siteman, general-cpu | 3555065–3555068 | 4 jobs | 3–6 s each | <0.01 | 4 (0) | Succeeded; condo rounds `-c 1` up to 2 CPUs, default time 28 d |
 | [T5](#t5-siteman-condo-probes-hello-rnaseq) | 2026-10-16 | nextflow-io/hello | v1.3 | 25.10.0 | condo-siteman | 3555072 | 4 | 1m 3s | 0.11 | 1 (0) | Succeeded |
 | [T5](#t5-siteman-condo-probes-hello-rnaseq) | 2026-10-16 | rnaseq | 3.26.0 | 25.10.0 | condo-siteman | 3555087 | 234 | 6m 0s | 0.72 | 1 (0) | Succeeded (containers cached; per-task ~1.8× faster than T1) |
+| [T6](#t6-nextflow-25102-differentialabundance-150-and-a-real-scale-rnaseq--da-chain) | 2026-11-01 | differentialabundance | 1.5.0 | 25.10.2 | condo-siteman | 4286057 | 21 | 8m 38s | 0.40 | 1 (0) | Succeeded (`-profile test`) |
+| [T6](#t6-nextflow-25102-differentialabundance-150-and-a-real-scale-rnaseq--da-chain) | 2026-11-01 | rnaseq | 3.26.0 (`-stub-run`, real inputs) | 25.10.2 | condo-siteman | 4286548 | 26 | 3m 15s | 0.17 | 1 (0) | Succeeded; stub stops after trimming (see T6) |
+| [T6](#t6-nextflow-25102-differentialabundance-150-and-a-real-scale-rnaseq--da-chain) | 2026-11-01 | rnaseq | 3.26.0 (real data, 6 × ~31 M PE, mouse, builds indexes) | 25.10.2 | condo-siteman | 4286805 | 254 | 1h 44m 49s | 57.04 | 1 (0) | Succeeded |
+| [T6](#t6-nextflow-25102-differentialabundance-150-and-a-real-scale-rnaseq--da-chain) | 2026-11-01 | differentialabundance | 1.5.0 (real data, chained `afterok`) | 25.10.2 | condo-siteman | 4286806 | 18 | 12m 15s | 1.02 | 1 (0) | Succeeded, started automatically after rnaseq |
 
 ## General notes
 
 - rnaseq 3.27.0 needs Nextflow >= 25.10.4; used 3.26.0.
 - cutandrun 3.2.2 declares Nextflow `!>=23.04.0` but fails to parse on 25.10.0; use `NXF_VER=24.04.4`.
 - fetchngs 1.13.0 needs Nextflow >= 25.10.4; used 1.12.0 (no `NXF_VER`).
-- The cluster's only Nextflow module is `nextflow/25.10.0` (as of 2026-10-16).
+- ~~The cluster's only Nextflow module is `nextflow/25.10.0` (as of 2026-10-16).~~ **As of 2026-11-01 the only module is
+  `nextflow/25.10.2`; `nextflow/25.10.0` is gone** (`module spider nextflow`). rnaseq 3.26.0 and differentialabundance 1.5.0
+  run on 25.10.2 (T6). rnaseq 3.27.0 and differentialabundance 2.0.0 still need >= 25.10.4.
 
 ## T1 rnaseq 3.26.0 test
 
@@ -743,3 +749,50 @@ The fair comparisons are queue wait (identical, both idle at test time) and per-
 faster in sum, plausibly Zen 5 vs Xeon Gold 6548Y+; single run, not a benchmark).
 
 Not tested (on purpose): preemption, limit-breaking, GPUs (none on the condo), multi-node jobs, real data.
+
+## T6 Nextflow 25.10.2: differentialabundance 1.5.0 and a real-scale rnaseq → DA chain
+
+**Status: DONE.** Everything succeeded on the first attempt (no failed attempts) on `condo-siteman` with
+`nextflow/25.10.2`. Total 58.6 CPU h, most of it the real rnaseq run.
+
+- `nextflow/25.10.0` had been removed from the module tree, so 25.10.2 was validated with cheap runs first.
+- differentialabundance 1.5.0 `-profile test` passes on 25.10.2 (0.40 CPU h). Its test profile uses the old `params.max_cpus` style caps, which **still applied** when `siteman_condo.config` was added (unlike rnaseq 3.26.0's `resourceLimits`, see T5).
+- The rnaseq 3.26.0 `-stub-run` with a real samplesheet and references is a good check of samplesheet parsing, symlinked inputs and Slurm submission (0.17 CPU h). It does **not** exercise alignment or QC: the stub reads are empty, so every sample fails the trimmed-reads threshold and the run ends after trimming ("6/6 samples skipped"). Check QC-step resources with `nextflow config` instead.
+- The real rnaseq run (6 PE mouse libraries, ~31 M pairs each, 2 × 151 bp, GRCm39, `star_salmon`, STAR and Salmon indexes built by the pipeline with `--save_reference`) took **1h 45m and 57.0 CPU h**. The pre-run estimate was ~160 CPU h. Per-process numbers and the config are in [08](08_resource_sizing.md#rnaseq-3260-at-real-scale).
+- differentialabundance 1.5.0 was submitted together with rnaseq as `sbatch --dependency=afterok:<rnaseq head job>`. It started by itself when rnaseq finished and took 12 min / 1.0 CPU h, including GSEA on 3 MSigDB GMTs.
+
+### Setup
+
+| | |
+|---|---|
+| Dates | 2026-11-01 |
+| Pipeline | nf-core/differentialabundance 1.5.0; nf-core/rnaseq 3.26.0 |
+| Nextflow / modules | `ris`, `slurm/compute2/25.05`, `nextflow/25.10.2`, `apptainer/1.3.6` (ris on its own line) |
+| Partition | `condo-siteman` for head jobs and tasks |
+| Script / command | Head jobs: `-c 2`, `--mem=8G` (rnaseq) / `6G` (DA), `-t 36:00:00` / `12:00:00`. `nextflow run nf-core/<p> -r <v> -profile apptainer -c ~/.config/nextflow/nextflow.config -c templates/siteman_condo.config [-c templates/rnaseq_3.26.0_resources.config] -resume` |
+| Profile / configs | `test,apptainer` (DA test); `apptainer` + `-params-file` (DA real); rnaseq real also uses [`templates/rnaseq_3.26.0_resources.config`](../templates/rnaseq_3.26.0_resources.config) |
+| Launch dir / work dir | under the project's scratch directory, one launch dir per run |
+| Total | 0.40 + 0.17 + 57.04 + 1.02 = **58.63 CPU h** |
+
+```bash
+RNA=$(sbatch --parsable run_rnaseq.sbatch real)
+sbatch --dependency=afterok:$RNA run_da.sbatch real     # PENDING (Dependency) until rnaseq exits 0
+```
+
+### Attempt log
+
+| # | Date | Job ID | Change | Error | Result |
+|---|---|---|---|---|---|
+| 1 | 2026-11-01 | 4286057 | differentialabundance 1.5.0 `-profile test,apptainer` + `siteman_condo.config` | — | **Succeeded**, 8m 38s, 21 tasks incl. DESeq2, GSEA, report, Shiny app. 0.40 CPU h |
+| 2 | 2026-11-01 | 4286548 | rnaseq 3.26.0 `-stub-run`, real samplesheet (symlinked FASTQs whose targets have spaces in the path) + real Ensembl FASTA/GTF | harmless `WARN: ... positional argument true` (from `--save_reference` with no value; the params JSON shows `true`) | **Succeeded**, 3m 15s, 26 tasks; stops after trimming as described above. 0.17 CPU h |
+| 3 | 2026-11-01 | 4286805 | rnaseq 3.26.0 real run + `rnaseq_3.26.0_resources.config` | — | **Succeeded**, 1h 44m 49s, 254 tasks, 0 retries. 57.04 CPU h (head 3.49) |
+| 4 | 2026-11-01 | 4286806 | differentialabundance 1.5.0 real run, `--dependency=afterok:4286805`, rnaseq `salmon.merged.gene_counts.tsv` + `gene_lengths.tsv`, same GTF, GSEA with 3 GMTs | — | **Succeeded**, 12m 15s, 18 tasks. 1.02 CPU h |
+
+### Results
+
+- Condo behaviour on the real run: all 255 jobs on `c2-node-115`, queue wait median 15 s (max 36 s), **peak 144 CPUs
+  in use at once** by this run alone (six 12-CPU STAR_ALIGN tasks plus QC). There are no per-user limits on the condo, so a larger batch would take a big share of the shared node. Consider `executor.queueSize` or fewer parallel samples when others are busy.
+- Head job: 2 CPU × 1h 45m = 3.5 CPU h; Nextflow with `NXF_OPTS='-Xms1g -Xmx4g'` fit easily in 8 GB.
+- The rnaseq containers were already in the shared `apptainer_cache` from earlier tests, so the run pulled nothing.
+- With `afterok`, a failed rnaseq leaves the DA job PENDING with reason `DependencyNeverSatisfied`, and it has to be cancelled by hand.
+  (Not exercised here; this is standard Slurm behaviour.)
