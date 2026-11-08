@@ -78,6 +78,9 @@ Head job on the condo: [`scripts/run_nf_condo.sbatch`](../scripts/run_nf_condo.s
 - **Can't see who else is on the condo** → `squeue` hides other users (`PrivateData`); use `scontrol show node c2-node-115 | grep -E 'CPUAlloc|AllocMem'`.
 - **`sbatch --test-only` says general-cpu won't start until tomorrow** → ignore; the real job started in 2 s.
 - nf-core writes `execution_trace` to `results/pipeline_info/`, not the launch dir, even with `-with-trace`.
+- **A real run can take a large share of the node**: a 6-sample rnaseq run peaked at 144 CPUs on its own (2026-11-01, [07 T6](07_pipeline_tests.md)).
+  There are no per-user limits, so for big batches set `executor { queueSize = N }` or check `scontrol show node c2-node-115` first.
+  Queue waits stayed at 15–36 s on that run.
 
 ## Open questions for RIS
 

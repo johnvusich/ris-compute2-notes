@@ -203,3 +203,33 @@ Many realistic runs cross the **~50 CPU h** line in `CLAUDE.md`, so a full run n
    process's memory to ~1.5 × its max RSS and time to ~2 × its max wall time; lower CPUs where `%cpu` is far
    below `100 × cpus`.
 4. Update this page and the config, then size the full run.
+
+## rnaseq 3.26.0 at real scale
+
+First real-data measurement (2026-11-01, job 4286805, condo-siteman): 6 PE mouse libraries, ~31 M read pairs each
+(2 × 151 bp), GRCm39 Ensembl, `--aligner star_salmon`, STAR + Salmon indexes **built by the run**, with
+[`templates/rnaseq_3.26.0_resources.config`](../templates/rnaseq_3.26.0_resources.config). From
+`scripts/nf_trace_cpuh.py` + the execution trace.
+
+| Process | Tasks | Request (CPU / mem) | Wall per task | %CPU | Peak RSS | CPU h alloc / used |
+|---|---|---|---|---|---|---|
+| STAR_ALIGN | 6 | 12 / 72 GB | 16–19 min | ~900% | 34.6 GB | 20.4 / 15.7 |
+| SALMON_QUANT (2 per sample: strandedness subsample + full) | 12 | 6 / 36 GB | 7–10 min (full) | ~460% | 28 GB | 5.2 / 3.8 |
+| QUALIMAP_RNASEQ | 6 | **2** / 24 GB | 16–30 min | ~103% | 19.5 GB | 4.8 / 2.5 |
+| STAR_GENOMEGENERATE (once) | 1 | 12 / 72 GB | 21 min | 650% | 67 GB | 4.2 / 2.3 |
+| SALMON_INDEX (once) | 1 | 6 / 36 GB | 34 min | 480% | 17 GB | 3.5 / 2.8 |
+| TRIMGALORE | 6 | 8 / **16 GB** | 3–4 min | ~240% | <200 MB | 2.8 / 0.8 |
+| SAMTOOLS_SORT_QUALIMAP | 6 | | | | | 1.4 / 1.1 |
+| PICARD_MARKDUPLICATES | 6 | **2** / 24 GB | 6–7 min | ~105% | 19.3 GB | 1.3 / 0.7 |
+| everything else (FastQC, RSeQC ×7 at **2** CPU, StringTie, featureCounts, dupRadar, bigWigs, ...) | ~200 | | | | | ~6 / ~3 |
+| Head job | 1 | 2 / 8 GB | 1h 45m | | | 3.5 |
+| **Total** | 255 | | | | | **57.0** |
+
+- **Per library: ≈ 7.5 CPU h allocated at ~31 M pairs (≈ 0.24 CPU h per M pairs)**, plus ~8 CPU h once for the indexes.
+  Reuse `--save_reference` output (`--star_index`, `--salmon_index`) to skip that cost.
+- My pre-run estimate (~160 CPU h) was **~3× too high**. The tools ran faster on real data than my generic planning
+  assumptions (STAR ~17 min per 31 M pairs at 12 CPU). For a new rnaseq run, plan with `N × D × 0.25 + 8 (indexes) + 2 × wall-hours (head)`.
+- Remaining waste: STAR's 12 CPUs are well used. TRIMGALORE uses ~2.4 of 8 CPUs (8 is the 3.26.0 default, kept)
+  and Salmon about 4.6 of 6. Lowering those two would save only ~2 CPU h at this scale.
+- Memory: Qualimap and Picard peak at ~19.5 GB, so 24 GB is right and 16 GB would fail on attempt 1.
+  STAR align needs ~35 GB for mouse and the STAR index ~67 GB.
